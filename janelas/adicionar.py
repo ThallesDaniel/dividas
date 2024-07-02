@@ -31,10 +31,16 @@ class AdicionarDivida(QDialog):
         self.setLayout(layout)
 
     def salvar_divida(self):
-        nome = self.nome_input.text()
-        valor = float(self.valor_input.text())
-        prazo = self.prazo_input.dateTime().toString("yyyy-MM-dd HH:mm:ss") 
+        try:
+            nome = self.nome_input.text()
+            valor = float(self.valor_input.text())  # Validação básica (pode ser melhorada)
+            prazo = self.prazo_input.dateTime().toString("yyyy-MM-dd HH:mm:ss")
 
-        with self.conexao as conn:
-            conn.executar_query(INSERT_DIVIDAS, (nome, valor, prazo))
-        self.accept()  # Fecha a janela após salvar
+            with self.conexao as conn:
+                with conn.cursor() as cursor:
+                    cursor.execute(INSERT_DIVIDAS, (nome, valor, prazo))
+            self.accept()
+
+        except ValueError:
+            # Lógica para mostrar uma mensagem de erro ao usuário
+            print("Valor inválido. Insira um número válido.")
