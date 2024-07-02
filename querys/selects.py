@@ -1,0 +1,1 @@
+SELECT_DIVIDAS = "SELECT * FROM dividas"
