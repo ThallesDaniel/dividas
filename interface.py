@@ -17,7 +17,7 @@ class Interface(QWidget):
         btn_adicionar = QPushButton("Adicionar")
         btn_adicionar.clicked.connect(self.abrir_janela_adicionar)
         
-        btn_editar = QPushButton("Editar")
+        btn_editar = QPushButton("Visualizar em Dashboard")
         btn_remover = QPushButton("Remover")
         layout.addWidget(btn_adicionar)
         layout.addWidget(btn_editar)
