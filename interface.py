@@ -1,57 +1,72 @@
-from PyQt5.QtWidgets import QApplication, QWidget,QDialog, QVBoxLayout, QPushButton, QTableWidget, QTableWidgetItem
+import flet as ft
 from conexao import Conexao
-from janelas.adicionar import AdicionarDivida
 from querys.selects import SELECT_DIVIDAS
 
-class Interface(QWidget):
-    def __init__(self):
-        super().__init__()
-
-        self.conexao = Conexao("controle_dividas", "postgres", "cicada3301")  # Dados de conexão
-
-        self.init_ui()
-
-    def init_ui(self):
-        layout = QVBoxLayout()
-
-        btn_adicionar = QPushButton("Adicionar")
-        btn_adicionar.clicked.connect(self.abrir_janela_adicionar)
+class Interface:
+    def __init__(self, page: ft.Page):
+        self.page = page
+        self.page.title = "Gerenciador de Dívidas"
         
-        btn_editar = QPushButton("Visualizar em Dashboard")
-        btn_remover = QPushButton("Remover")
-        layout.addWidget(btn_adicionar)
-        layout.addWidget(btn_editar)
-        layout.addWidget(btn_remover)
+        # Inicializa a conexão com o banco de dados
+        self.conexao = Conexao(dbname="controle_dividas", user="postgres", password="cicada3301", host="localhost", port="5432") 
+        
+        self.data_table = None 
+        self.criar_interface()
 
-        self.tabela = QTableWidget()
-        self.atualizar_tabela()  # Preenche a tabela inicialmente
-        layout.addWidget(self.tabela)
+    def criar_interface(self):
+        self.page.add(
+            ft.Row([
+                ft.ElevatedButton("Adicionar", on_click=self.adicionar),
+                ft.ElevatedButton("Visualizar Dashboard", on_click=self.dashboard),
+                ft.ElevatedButton("Editar", on_click=self.editar),
+                ft.ElevatedButton("Remover", on_click=self.remover)
+            ])
+        )
+        self.carregar_dados()
 
-        self.setLayout(layout)
-
-    def abrir_janela_adicionar(self):
-        janela_adicionar = AdicionarDivida(self.conexao)
-        if janela_adicionar.exec_() == QDialog.Accepted:  # Se a janela for fechada com "Salvar"
-            self.atualizar_tabela() 
+    def carregar_dados(self):
+        dados = self.conexao.executar_query(SELECT_DIVIDAS)
+        
+        if dados: 
+            colunas = [
+                ft.DataColumn(ft.Text("ID")),
+                ft.DataColumn(ft.Text("Nome")),
+                ft.DataColumn(ft.Text("Valor")),
+                ft.DataColumn(ft.Text("Prazo")),
+            ]
             
-    def atualizar_tabela(self):
-        # Obter dívidas e nomes das colunas dentro do mesmo bloco with
-        with self.conexao as conn:
-            dividas = conn.executar_query(SELECT_DIVIDAS)
-            conn.cursor.execute("SELECT column_name FROM information_schema.columns WHERE table_name = 'dividas'")
-            nomes_colunas = [coluna[0] for coluna in conn.cursor.fetchall()]
+            # Cria as linhas da tabela com base nos dados retornados
+            linhas = [
+                ft.DataRow(cells=[
+                    ft.DataCell(ft.Text(str(linha[0]))),  # ID
+                    ft.DataCell(ft.Text(str(linha[1]))),  # Nome
+                    ft.DataCell(ft.Text(str(linha[2]))),  # Valor
+                    ft.DataCell(ft.Text(str(linha[3])))   # Prazo
+                ]) for linha in dados
+            ]
+            
+            self.data_table = ft.DataTable(columns=colunas, rows=linhas)
+            self.page.add(self.data_table) 
+        else:
+            self.page.add(ft.Text("Nenhum dado encontrado.")) 
 
-        # Atualizar a tabela fora do bloco with
-        self.tabela.setRowCount(len(dividas))
-        self.tabela.setColumnCount(len(dividas[0]))  # Assume que todas as linhas têm o mesmo número de colunas
-        self.tabela.setHorizontalHeaderLabels(nomes_colunas)  # Definir cabeçalho da tabela
+        self.page.update()
 
-        for i, linha in enumerate(dividas):
-            for j, valor in enumerate(linha):
-                item = QTableWidgetItem(str(valor))  # Converter valor para string
-                self.tabela.setItem(i, j, item)
+    def adicionar(self, e):
+        # Implemente a lógica para adicionar uma nova dívida
+        pass
+
+    def dashboard(self, e):
+        # Implemente a lógica para visualizar o dashboard
+        pass
+
+    def editar(self, e):
+        # Implemente a lógica para editar uma dívida
+        pass
+
+    def remover(self, e):
+        # Implemente a lógica para remover uma dívida
+        pass
+
 if __name__ == "__main__":
-    app = QApplication([])
-    interface = Interface()
-    interface.show()
-    app.exec_()
+    ft.app(target=Interface)
